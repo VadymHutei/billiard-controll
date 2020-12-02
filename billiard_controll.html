@@ -5,6 +5,17 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Бильярд Бетонка</title>
+        <script>
+
+            const TABLE_NUMBER = 3
+            const BASEPRICE = 130
+            const PRICES = new Map([
+                [8, 85],
+                [19, 110],
+                [23, 130],
+            ])
+
+        </script>
         <style>
             html {
                 height: 100%;
@@ -17,12 +28,15 @@
                 width: 100%;
                 margin: 0;
                 padding: 0;
-                background-color: #333333;
-                color: #ffffff;
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             }
 
-            div {
+            main {
+                height: 100%;
+            }
+
+            div,
+            p {
                 margin: 0;
                 padding: 0;
             }
@@ -31,7 +45,10 @@
                 display: flex;
                 flex-direction: row;
                 justify-content: flex-start;
+                align-items: flex-start;
                 flex-wrap: wrap;
+                min-height: 100%;
+                background-color: #cccccc;
             }
 
             .new_game_param_form_wrap {
@@ -52,17 +69,15 @@
 
             .table {
                 margin: 2em;
-                padding: 1em;
-                background-color: #335500;
-                border-style: solid;
-                border-width: 1em;
-                border-color: #775522;
-                border-radius: 1em;
-                box-shadow: 0 0 1em #000000;
+                border: 1px solid #000000;
+                background-color: #ffffff;
             }
 
             .table_title {
+                padding: 1em 0;
                 text-align: center;
+                color: #ffffff;
+                background-color: #0000cc;
             }
 
             .table .title {
@@ -148,13 +163,6 @@
         </template>
 
         <script>
-
-            const BASEPRICE = 130
-            const PRICES = new Map([
-                [8, 85],
-                [19, 110],
-                [23, 130],
-            ])
 
             function getAmount(startTime, endTime) {
                 let startTimeTS = ts(startTime)
@@ -520,7 +528,7 @@
         </script>
         <script>
 
-            let app = new App(3)
+            let app = new App(TABLE_NUMBER)
 
         </script>
     </body>

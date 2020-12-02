@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Бильярд Бетонка</title>
+    <link rel="stylesheet" href="css/main.css">
+    <script src="js/lib.js"></script>
+    <script src="js/const.js"></script>
+    <script src="js/Interface.js"></script>
+    <script src="js/App.js"></script>
+    <script src="js/Table.js"></script>
+    <script src="js/Game.js"></script>
+</head>
+
+<body>
+    <main>
+        <div id="app" class="app"></div>
+    </main>
+
+    <template id="table_template">
+            <div class="table">
+                <p class="table_title">
+                    <span class="title"></span>
+                    <br>
+                    <span class="status"></span>
+                </p>
+                <table class="games_table">
+                    <thead>
+                        <tr>
+                            <th>Начало игры</th>
+                            <th>Конец игры</th>
+                            <th>Стоимость</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                    <tfoot></tfoot>
+                </table>
+                <button class="game_start_button">Играть</button>
+                <button class="game_stop_button">Завершить</button>
+                <button class="game_add_time_button">Добавить время</button>
+            </div>
+        </template>
+
+    <template id=new_game_params_form_template>
+            <div class="new_game_param_form_wrap">
+                <div class="new_game_param_form">
+                    <div>
+                        <label for="hours">часов</label>
+                        <input id="hours" type="text" min="0" max="12" maxlength="2" size="2" value="0"
+                            autocomplete="off" placeholder="0">
+                        <label for="minutes">минут</label>
+                        <input id="minutes" type="text" min="0" max="60" maxlength="2" size="2" value="0"
+                            autocomplete="off" placeholder="0">
+                    </div>
+                    <div>
+                        <label for="amount">грн</label>
+                        <input id="amount" type="text" min="0" max="9999" maxlength="4" size="4" value="0"
+                            autocomplete="off" placeholder="0">
+                    </div>
+                    <button id="start_game">Начать</button>
+                </div>
+            </div>
+        </template>
+
+    <script>
+        let app = new App(TABLE_NUMBER)
+    </script>
+
+</body>
+
+</html>

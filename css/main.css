@@ -1,0 +1,91 @@
+html {
+    height: 100%;
+    width: 100%;
+}
+
+body {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+main {
+    height: 100%;
+}
+
+div,
+p {
+    margin: 0;
+    padding: 0;
+}
+
+.app {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    min-height: 100%;
+    background-color: #cccccc;
+}
+
+.new_game_param_form_wrap {
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.new_game_param_form {
+    padding: 1em;
+    background-color: #ffffff;
+    color: #000000;
+}
+
+.table {
+    margin: 2em;
+    border: 1px solid #000000;
+    background-color: #ffffff;
+}
+
+.table_title {
+    padding: 1em 0;
+    text-align: center;
+    color: #ffffff;
+    background-color: #0000cc;
+}
+
+.table .title {
+    font-size: 2em;
+    font-weight: bold;
+}
+
+.table .status {
+    font-size: 1em;
+}
+
+.table[data-status='vacant'] .status {
+    color: #a2ff00;
+}
+
+.table[data-status='busy'] .status {
+    color: #ff1515;
+}
+
+.table[data-status='vacant'] .game_stop_button {
+    display: none;
+}
+
+.table[data-status='vacant'] .game_add_time_button {
+    display: none;
+}
+
+.table[data-status='busy'] .game_start_button {
+    display: none;
+}
