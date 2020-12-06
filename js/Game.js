@@ -11,16 +11,15 @@ class Game {
     _toPay = 0
     _paid = 0
 
-    constructor(duration, toPay, amount) {
+    constructor(duration, toPay, paid) {
         this.start(duration, toPay)
-        this.pay(amount)
+        if (paid)
+            this.pay(toPay)
     }
 
     start(duration, toPay) {
         this._toPay = toPay
-        if (this._status !== undefined) {
-            return
-        }
+        if (this._status !== undefined) return
         this._status = this.IN_PROGRESS
         this._startTime = new Date()
         if (duration !== 0) {
@@ -31,23 +30,17 @@ class Game {
     }
 
     addTime(duration) {
-        if (this._status !== this.IN_PROGRESS) {
-            return
-        }
-        if (this._endTime === undefined) {
+        if (this._status !== this.IN_PROGRESS) return
+        if (this._endTime === undefined)
             this._endTime = new Date()
-        }
         this._endTime.setSeconds(this._endTime.getSeconds() + duration)
         this.setStopHandler()
     }
 
     stop() {
-        if (this._status != this.IN_PROGRESS) {
-            return
-        }
-        if (this._endTimeTimerId !== undefined) {
+        if (this._status != this.IN_PROGRESS) return
+        if (this._endTimeTimerId !== undefined)
             clearTimeout(this._endTimeTimerId);
-        }
         this._status = this.FINISHED
         this._endTime = new Date()
     }
@@ -57,9 +50,8 @@ class Game {
     }
 
     setStopHandler() {
-        if (this._endTimeTimerId !== undefined) {
+        if (this._endTimeTimerId !== undefined)
             clearTimeout(this._endTimeTimerId);
-        }
         this._endTimeTimerId = setTimeout(this.stop, this._endTime - this._startTime)
     }
 

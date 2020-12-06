@@ -8,13 +8,13 @@ function updateAmount(hoursField, minutesField, amountField) {
     let hours = parseInt(hoursField.value)
     let minutes = parseInt(minutesField.value)
     let gameDuration = getTimeInSeconds(hours, minutes)
-    let startTime = new Date()
+    let startTime = this.currentGame === null ? new Date() : this.currentGame.endTime
     let endTime = new Date((ts(startTime) + gameDuration) * 1000)
     let amount = getAmount(startTime, endTime)
     amountField.value = amount.toFixed(2)
 }
 
-function showSetTimePopup(okCallback) {
+function showSetTimePopup() {
     let startGamePopup = startGamePopupTemplate.content.cloneNode(true)
     let hoursField = startGamePopup.querySelector('#hours')
     let minutesField = startGamePopup.querySelector('#minutes')
@@ -24,7 +24,7 @@ function showSetTimePopup(okCallback) {
     hoursField.addEventListener('input', updateAmount.bind(this, hoursField, minutesField, amountField))
     minutesField.addEventListener('input', updateAmount.bind(this, hoursField, minutesField, amountField))
     okButton.addEventListener('click', function() {
-        okCallback(this, hoursField, minutesField, amountField, isPaidField)
+        addGame(this, hoursField, minutesField, amountField, isPaidField)
         document.querySelector('.new_game_param_form_wrap').remove()
     }.bind(this))
     appBlock.appendChild(startGamePopup)
@@ -39,14 +39,12 @@ function updateGames(table) {
     for (let game of table.games) {
         let gameRow = document.createElement('tr')
         let gameStartTimeCell = document.createElement('td')
-        if (game.startTime !== undefined) {
+        if (game.startTime !== undefined)
             gameStartTimeCell.innerText = formatTime(game.startTime)
-        }
         gameRow.appendChild(gameStartTimeCell)
         let gameEndTimeCell = document.createElement('td')
-        if (game.endTime !== undefined) {
+        if (game.endTime !== undefined)
             gameEndTimeCell.innerText = formatTime(game.endTime)
-        }
         gameRow.appendChild(gameEndTimeCell)
         let gameAmountCell = document.createElement('td')
         gameAmountCell.innerText = getAmount(game.startTime, game.endTime).toFixed(2)
@@ -73,29 +71,20 @@ function updateTable(table) {
     updateGames(table)
 }
 
-function getTimeToPlay(hoursField, minutesField) {
+function addGame(table, hoursField, minutesField, amountField, isPaidField) {
     let hours = parseInt(hoursField.value)
     let minutes = parseInt(minutesField.value)
-    return getTimeInSeconds(hours, minutes)
-}
-
-function startNewGame(table, hoursField, minutesField, amountField, isPaidField) {
+    let duration = getTimeInSeconds(hours, minutes)
     let amount = parseInt(amountField.value)
-    table.startNewGame(
-        getTimeToPlay(hoursField, minutesField),
-        amount,
-        isPaidField.checked ? amount : 0
-    )
+    let isPaid = isPaidField.checked
+    table.currentGame === null ?
+        table.startNewGame(duration, amount, isPaid) :
+        table.addTimeToCurrentGame(duration, amount, isPaid)
     updateTable(table)
 }
 
 function stopCurrentGame(table) {
     table.stopCurrentGame()
-    updateTable(table)
-}
-
-function addTimeToCurrentGame(table, hoursField, minutesField) {
-    table.addTimeToCurrentGame(getTimeToPlay(hoursField, minutesField))
     updateTable(table)
 }
 
@@ -117,8 +106,8 @@ for (let table of tables) {
     element.querySelector('.table').dataset.status = table.status
     element.querySelector('.table .title').textContent = 'Стол ' + table.number
     element.querySelector('.table .status').textContent = table.TABLE_STATUSES.get(table.status)
-    element.querySelector('.start_game_button').addEventListener('click', showSetTimePopup.bind(table, startNewGame))
+    element.querySelector('.start_game_button').addEventListener('click', showSetTimePopup.bind(table))
     element.querySelector('.stop_game_button').addEventListener('click', stopCurrentGame.bind(this, table))
-    element.querySelector('.game_add_time_button').addEventListener('click', showSetTimePopup.bind(table, addTimeToCurrentGame))
+    element.querySelector('.game_add_time_button').addEventListener('click', showSetTimePopup.bind(table))
     appBlock.appendChild(element)
 }

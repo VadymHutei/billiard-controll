@@ -8,6 +8,7 @@ class Table {
     ])
 
     _games = []
+    _currentGame = null
     _status
     _number
 
@@ -17,11 +18,12 @@ class Table {
     }
 
     startNewGame(duration, toPay, paid) {
+        if (this._currentGame !== null) return
         this._startGame(duration, toPay, paid)
         this._setStatus(this.BUSY)
     }
 
-    addTimeToCurrentGame(duration) {
+    addTimeToCurrentGame(duration, toPay, paid) {
         this._addTimeToCurrentGame(duration)
     }
 
@@ -43,6 +45,7 @@ class Table {
 
     _stopCurrentGame() {
         this._currentGame.stop()
+        this._currentGame = null
         this._log('игра остановлена')
     }
 
@@ -72,6 +75,10 @@ class Table {
 
     get games() {
         return this._games
+    }
+
+    get currentGame() {
+        return this._currentGame
     }
 
     set status(status) {

@@ -1,7 +1,5 @@
 function getAmount(startTime, endTime) {
-    if (startTime === undefined || endTime === undefined) {
-        return 0
-    }
+    if (startTime === undefined || endTime === undefined) return 0
     let startTimeTS = ts(startTime)
     let endTimeTS = ts(endTime)
     let timeToPlay = endTimeTS - startTimeTS
