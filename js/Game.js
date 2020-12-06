@@ -1,8 +1,8 @@
 class Game {
 
-    NOT_STARTED = 'not started'
-    IN_PROGRESS = 'in progress'
-    FINISHED = 'finished'
+    NOT_STARTED = 'еще не начали'
+    IN_PROGRESS = 'играют'
+    FINISHED = 'закончили'
 
     _status
     _startTime
@@ -19,7 +19,7 @@ class Game {
         }
         this._status = this.IN_PROGRESS
         this._startTime = new Date()
-        if (duration !== undefined) {
+        if (duration !== 0) {
             let endTimeTS = ts(this._startTime) + duration
             this._endTime = new Date(endTimeTS * 1000)
             this.setStopHandler()
@@ -30,7 +30,10 @@ class Game {
         if (this._status !== this.IN_PROGRESS) {
             return
         }
-        this._endTime.setSeconds(foo.getSeconds() + duration)
+        if (this._endTime === undefined) {
+            this._endTime = new Date()
+        }
+        this._endTime.setSeconds(this._endTime.getSeconds() + duration)
         this.setStopHandler()
     }
 

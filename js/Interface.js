@@ -85,7 +85,7 @@ class Interface {
             let minutes = parseInt(minutesField.value)
             let timeToPlay = getTimeInSeconds(hours, minutes)
             document.querySelector('.new_game_param_form_wrap').remove()
-            table.startGame(timeToPlay)
+            table.startNewGame(timeToPlay)
         }
 
         let newGameParamsPopup = this._getTemplate('new_game_params_form')

@@ -1,4 +1,7 @@
 function getAmount(startTime, endTime) {
+    if (startTime === undefined || endTime === undefined) {
+        return 0
+    }
     let startTimeTS = ts(startTime)
     let endTimeTS = ts(endTime)
     let timeToPlay = endTimeTS - startTimeTS
@@ -60,6 +63,12 @@ function formatTime(dateTime) {
 
 function getTimeInSeconds(hours = 0, minutes = 0) {
     return (hours * 60 * 60) + (minutes * 60)
+}
+
+function getTimeToPlay(hoursField, minutesField) {
+    let hours = parseInt(hoursField.value)
+    let minutes = parseInt(minutesField.value)
+    return getTimeInSeconds(hours, minutes)
 }
 
 function log(message, statusName = 'info') {

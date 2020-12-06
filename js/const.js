@@ -1,4 +1,4 @@
-const TABLE_NUMBER = 3
+const TABLES_NUMBER = 3
 const BASEPRICE = 130
 const PRICES = new Map([
     [8, 85],

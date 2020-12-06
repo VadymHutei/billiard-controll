@@ -6,10 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Бильярд Бетонка</title>
     <link rel="stylesheet" href="css/main.css">
-    <script src="js/lib.js"></script>
     <script src="js/const.js"></script>
-    <script src="js/Interface.js"></script>
-    <script src="js/App.js"></script>
+    <script src="js/lib.js"></script>
     <script src="js/Table.js"></script>
     <script src="js/Game.js"></script>
 </head>
@@ -32,13 +30,14 @@
                             <th>Начало игры</th>
                             <th>Конец игры</th>
                             <th>Стоимость</th>
+                            <th>Статус</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
                     <tfoot></tfoot>
                 </table>
-                <button class="game_start_button">Играть</button>
-                <button class="game_stop_button">Завершить</button>
+                <button class="start_game_button">Играть</button>
+                <button class="stop_game_button">Завершить</button>
                 <button class="game_add_time_button">Добавить время</button>
             </div>
         </template>
@@ -59,14 +58,12 @@
                         <input id="amount" type="text" min="0" max="9999" maxlength="4" size="4" value="0"
                             autocomplete="off" placeholder="0">
                     </div>
-                    <button id="start_game">Начать</button>
+                    <button id="start_game">OK</button>
                 </div>
             </div>
         </template>
 
-    <script>
-        let app = new App(TABLE_NUMBER)
-    </script>
+    <script src="js/main.js"></script>
 
 </body>
 

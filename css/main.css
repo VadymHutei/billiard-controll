@@ -78,7 +78,7 @@ p {
     color: #ff1515;
 }
 
-.table[data-status='vacant'] .game_stop_button {
+.table[data-status='vacant'] .stop_game_button {
     display: none;
 }
 
@@ -86,6 +86,6 @@ p {
     display: none;
 }
 
-.table[data-status='busy'] .game_start_button {
+.table[data-status='busy'] .start_game_button {
     display: none;
 }

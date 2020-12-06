@@ -12,48 +12,38 @@ class Table {
     _number
     _interface
 
-    constructor(tableNumber, appInterface) {
+    constructor(tableNumber) {
         this._number = tableNumber
-        this._interface = appInterface
         this._status = this.VACANT
-        this.createElement()
     }
 
-    createElement() {
-        this._interface.addTable(this)
-    }
-
-    startGame(duration) {
+    startNewGame(duration) {
         this._startGame(duration)
-        this._busy()
-        log(`Стол №${this._number} - запущена новая игра`)
+        this._setStatus(this.BUSY)
     }
 
-    stopGame() {
-        this._stopGame()
-        this._vacant()
-        log(`Стол №${this._number} - игра остановлена`)
+    addTimeToCurrentGame(duration) {
+        this._currentGame.addTime(duration)
+    }
+
+    stopCurrentGame() {
+        this._stopCurrentGame()
+        this._setStatus(this.VACANT)
     }
 
     _startGame(duration) {
         this._currentGame = new Game(duration)
         this._games.push(this._currentGame)
-        this._interface.updateGames(this)
+        log(`Стол №${this._number} - запущена новая игра`)
     }
 
-    _stopGame() {
+    _stopCurrentGame() {
         this._currentGame.stop()
-        this._interface.updateGames(this)
+        log(`Стол №${this._number} - игра остановлена`)
     }
 
-    _busy() {
-        this._status = this.BUSY
-        this._interface.updateTableStatus(this)
-    }
-
-    _vacant() {
-        this._status = this.VACANT
-        this._interface.updateTableStatus(this)
+    _setStatus(status) {
+        this._status = status
     }
 
     _stopGameHandler() {
