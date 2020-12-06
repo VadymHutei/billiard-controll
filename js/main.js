@@ -19,11 +19,12 @@ function showSetTimePopup(okCallback) {
     let hoursField = startGamePopup.querySelector('#hours')
     let minutesField = startGamePopup.querySelector('#minutes')
     let amountField = startGamePopup.querySelector('#amount')
+    let isPaidField = startGamePopup.querySelector('#is_paid')
     let okButton = startGamePopup.querySelector('#start_game')
     hoursField.addEventListener('input', updateAmount.bind(this, hoursField, minutesField, amountField))
     minutesField.addEventListener('input', updateAmount.bind(this, hoursField, minutesField, amountField))
     okButton.addEventListener('click', function() {
-        okCallback(this, hoursField, minutesField)
+        okCallback(this, hoursField, minutesField, amountField, isPaidField)
         document.querySelector('.new_game_param_form_wrap').remove()
     }.bind(this))
     appBlock.appendChild(startGamePopup)
@@ -72,8 +73,19 @@ function updateTable(table) {
     updateGames(table)
 }
 
-function startNewGame(table, hoursField, minutesField) {
-    table.startNewGame(getTimeToPlay(hoursField, minutesField))
+function getTimeToPlay(hoursField, minutesField) {
+    let hours = parseInt(hoursField.value)
+    let minutes = parseInt(minutesField.value)
+    return getTimeInSeconds(hours, minutes)
+}
+
+function startNewGame(table, hoursField, minutesField, amountField, isPaidField) {
+    let amount = parseInt(amountField.value)
+    table.startNewGame(
+        getTimeToPlay(hoursField, minutesField),
+        amount,
+        isPaidField.checked ? amount : 0
+    )
     updateTable(table)
 }
 

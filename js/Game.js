@@ -8,12 +8,16 @@ class Game {
     _startTime
     _endTime
     _endTimeTimerId
+    _toPay = 0
+    _paid = 0
 
-    constructor(duration) {
-        this.start(duration)
+    constructor(duration, toPay, amount) {
+        this.start(duration, toPay)
+        this.pay(amount)
     }
 
-    start(duration) {
+    start(duration, toPay) {
+        this._toPay = toPay
         if (this._status !== undefined) {
             return
         }
@@ -48,6 +52,10 @@ class Game {
         this._endTime = new Date()
     }
 
+    pay(amount) {
+        this._paid += amount
+    }
+
     setStopHandler() {
         if (this._endTimeTimerId !== undefined) {
             clearTimeout(this._endTimeTimerId);
@@ -57,6 +65,10 @@ class Game {
 
     get status() {
         return this._status
+    }
+
+    get balance() {
+        return this._toPay - this._paid
     }
 
     get startTime() {

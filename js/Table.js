@@ -10,20 +10,19 @@ class Table {
     _games = []
     _status
     _number
-    _interface
 
     constructor(tableNumber) {
         this._number = tableNumber
         this._status = this.VACANT
     }
 
-    startNewGame(duration) {
-        this._startGame(duration)
+    startNewGame(duration, toPay, paid) {
+        this._startGame(duration, toPay, paid)
         this._setStatus(this.BUSY)
     }
 
     addTimeToCurrentGame(duration) {
-        this._currentGame.addTime(duration)
+        this._addTimeToCurrentGame(duration)
     }
 
     stopCurrentGame() {
@@ -31,15 +30,20 @@ class Table {
         this._setStatus(this.VACANT)
     }
 
-    _startGame(duration) {
-        this._currentGame = new Game(duration)
+    _startGame(duration, toPay, paid) {
+        this._currentGame = new Game(duration, toPay, paid)
         this._games.push(this._currentGame)
-        log(`Стол №${this._number} - запущена новая игра`)
+        this._log('запущена новая игра')
+    }
+
+    _addTimeToCurrentGame(duration) {
+        this._currentGame.addTime(duration)
+        this._log('Для текущей игры добавлено время')
     }
 
     _stopCurrentGame() {
         this._currentGame.stop()
-        log(`Стол №${this._number} - игра остановлена`)
+        this._log('игра остановлена')
     }
 
     _setStatus(status) {
@@ -48,6 +52,10 @@ class Table {
 
     _stopGameHandler() {
         this._vacant()
+    }
+
+    _log(message) {
+        log(`Стол №${this._number} - ${message}`)
     }
 
     get number() {
