@@ -1,536 +1,641 @@
 <!DOCTYPE html>
 <html lang="ru">
 
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Бильярд Бетонка</title>
-        <script>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Бильярд Бетонка</title>
+    <style>
+        html {
+            height: 100%;
+            width: 100%;
+        }
+        
+        body {
+            position: relative;
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        main {
+            height: 100%;
+        }
+        
+        div,
+        p {
+            margin: 0;
+            padding: 0;
+        }
+        
+        .app {
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-start;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            min-height: 100%;
+            background-color: #cccccc;
+        }
+        
+        .add_game_popup_wrap,
+        .pay_game_popup_wrap {
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        
+        .add_game_popup,
+        .pay_game_popup {
+            padding: 1em;
+            background-color: #ffffff;
+            color: #000000;
+        }
+        
+        .table {
+            margin: 2em;
+            border: 1px solid #000000;
+            background-color: #ffffff;
+        }
+        
+        .table_title {
+            padding: 1em 0;
+            text-align: center;
+            color: #ffffff;
+            background-color: #0000cc;
+        }
+        
+        .table .title {
+            font-size: 2em;
+            font-weight: bold;
+        }
+        
+        .table .status {
+            font-size: 1em;
+        }
+        
+        .table[data-status='vacant'] .status {
+            color: #a2ff00;
+        }
+        
+        .table[data-status='busy'] .status {
+            color: #ff1515;
+        }
+        
+        .table[data-status='busy'] .start_game_button {
+            display: none;
+        }
+        
+        .table[data-status='vacant'] .stop_game_button {
+            display: none;
+        }
+        
+        .table[data-status='vacant'] .game_add_time_button {
+            display: none;
+        }
+        
+        .table[data-status='vacant'] .pay_button {
+            display: none;
+        }
+    </style>
+    <script>
+        const TABLES_NUMBER = 3
+        const RATES = [
+            [0, 130],
+            [8, 85],
+            [19, 110],
+            [23, 130],
+        ]
+    </script>
+    <script>
+        function getAmount(startTime, endTime) {
+            if (startTime === undefined || endTime === undefined) return 0
+            if (startTime == endTime) return 0
+            if (startTime > endTime) return 0
+            let amount = 0
+            while (true) {
+                for (let rateIndex = 0; rateIndex < RATES.length; rateIndex++) {
+                    let rate = RATES[rateIndex][1]
+                    let nextRateIndex = (rateIndex + 1) % RATES.length
+                    let nextRateStart = new Date(startTime)
+                    if (RATES[nextRateIndex][0] === 0) nextRateStart.setDate(nextRateStart.getDate() + 1)
+                    nextRateStart.setHours(RATES[nextRateIndex][0])
+                    if (startTime > nextRateStart) continue
+                    if (endTime > nextRateStart) {
+                        let timeLeft = nextRateStart - startTime
+                        amount += ms2h(timeLeft) * rate
+                        startTime = nextRateStart
+                    } else {
+                        let timeLeft = endTime - startTime
+                        amount += ms2h(timeLeft) * rate
+                        return amount
+                    }
+                }
+            }
+        }
 
-            const TABLE_NUMBER = 3
-            const BASEPRICE = 130
-            const PRICES = new Map([
-                [8, 85],
-                [19, 110],
-                [23, 130],
+        function getGameDuration(startTime, amount) {
+            let duration = 0
+            while (true) {
+                for (let rateIndex = 0; rateIndex < RATES.length; rateIndex++) {
+                    let rate = RATES[rateIndex][1]
+                    let nextRateIndex = (rateIndex + 1) % RATES.length
+                    let nextRateStart = new Date(startTime)
+                    if (RATES[nextRateIndex][0] === 0) nextRateStart.setDate(nextRateStart.getDate() + 1)
+                    nextRateStart.setHours(RATES[nextRateIndex][0])
+                    if (startTime > nextRateStart) continue
+                    let gameDuration = h2ms(amount / rate)
+                    let rateDuration = nextRateStart - startTime
+                    if (gameDuration > rateDuration) {
+                        duration += rateDuration
+                        amount -= ms2h(rateDuration) * rate
+                        startTime = nextRateStart
+                    } else {
+                        duration += gameDuration
+                        return ms2TimeMap(duration)
+                    }
+                }
+            }
+        }
+
+        function ms2TimeMap(ms) {
+            return new Map([
+                ['hours', Math.trunc(ms / (60 * 60 * 1000))],
+                ['minutes', Math.trunc((ms / (60 * 1000)) % 60)],
+                ['seconds', Math.round((ms / 1000) % 60)],
+                ['totalMilliseconds', ms],
+            ])
+        }
+
+        function ts(date) {
+            return Math.round(date.getTime() / 1000)
+        }
+
+        function getTimeStampForHour(hour, currentDate = new Date()) {
+            let date = new Date(
+                currentDate.getFullYear(),
+                currentDate.getMonth(),
+                currentDate.getDate(),
+                hour
+            )
+            return ts(date)
+        }
+
+        function secondsToHours(seconds) {
+            return seconds / 3600
+        }
+
+        function ms2h(ms) {
+            return ms / (1000 * 60 * 60)
+        }
+
+        function h2ms(h) {
+            return Math.round(h * 60 * 60 * 1000)
+        }
+
+        function formatTime(dateTime) {
+            return [
+                dateTime.getHours().toString().padStart(2, '0'),
+                dateTime.getMinutes().toString().padStart(2, '0'),
+                dateTime.getSeconds().toString().padStart(2, '0'),
+            ].join(':')
+        }
+
+        function getTimeInSeconds(hours = 0, minutes = 0) {
+            return (hours * 60 * 60) + (minutes * 60)
+        }
+
+        function log(message, statusName = 'info') {
+            const MESSAGE_STATUSES = new Map([
+                ['info', new Map([
+                    ['status', 'INFO'],
+                    ['color', 'inherit'],
+                ])],
+                ['success', new Map([
+                    ['status', 'SUCCESS'],
+                    ['color', '#00ff00'],
+                ])],
+                ['error', new Map([
+                    ['status', 'ERROR'],
+                    ['color', '#ff0000'],
+                ])],
+            ])
+            let status = MESSAGE_STATUSES.has(statusName) ? MESSAGE_STATUSES.get(statusName) : MESSAGE_STATUSES.get('info')
+            let style = `color: ${status.get('color')}`
+            console.log(`%c${formatTime(new Date())} ${status.get('status')}: ${message}`, style)
+        }
+    </script>
+    <script>
+        class Table {
+
+            VACANT = 'vacant'
+            BUSY = 'busy'
+            TABLE_STATUSES = new Map([
+                [this.VACANT, 'свободен'],
+                [this.BUSY, 'занят'],
             ])
 
-        </script>
-        <style>
-            html {
-                height: 100%;
-                width: 100%;
+            _games = []
+            _currentGame = null
+            _status
+            _number
+
+            constructor(tableNumber) {
+                this._number = tableNumber
+                this._status = this.VACANT
             }
 
-            body {
-                position: relative;
-                height: 100%;
-                width: 100%;
-                margin: 0;
-                padding: 0;
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            startNewGame(duration, toPay, paid) {
+                if (this._currentGame !== null) return
+                this._startNewGame(duration, toPay, paid)
+                this._setStatus(this.BUSY)
             }
 
-            main {
-                height: 100%;
+            addTimeToCurrentGame(duration, toPay, paid) {
+                this._addTimeToCurrentGame(duration)
             }
 
-            div,
-            p {
-                margin: 0;
-                padding: 0;
+            payCurrentGame(amount) {
+                this._payCurrentGame(amount)
             }
 
-            .app {
-                display: flex;
-                flex-direction: row;
-                justify-content: flex-start;
-                align-items: flex-start;
-                flex-wrap: wrap;
-                min-height: 100%;
-                background-color: #cccccc;
+            stopCurrentGame() {
+                this._stopCurrentGame()
+                this._setStatus(this.VACANT)
             }
 
-            .new_game_param_form_wrap {
-                position: absolute;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                height: 100%;
-                width: 100%;
-                background-color: rgba(0, 0, 0, 0.5);
+            _startNewGame(duration, toPay, paid) {
+                this._currentGame = new Game(duration, toPay, paid)
+                this._games.push(this._currentGame)
+                this._log('запущена новая игра')
             }
 
-            .new_game_param_form {
-                padding: 1em;
-                background-color: #ffffff;
-                color: #000000;
+            _addTimeToCurrentGame(duration) {
+                this._currentGame.addTime(duration)
+                this._log('Для текущей игры добавлено время')
             }
 
-            .table {
-                margin: 2em;
-                border: 1px solid #000000;
-                background-color: #ffffff;
+            _payCurrentGame(amount) {
+                this._currentGame.pay(amount)
             }
 
-            .table_title {
-                padding: 1em 0;
-                text-align: center;
-                color: #ffffff;
-                background-color: #0000cc;
+            _stopCurrentGame() {
+                this._currentGame.stop()
+                this._currentGame = null
+                this._log('игра остановлена')
             }
 
-            .table .title {
-                font-size: 2em;
-                font-weight: bold;
+            _setStatus(status) {
+                this._status = status
             }
 
-            .table .status {
-                font-size: 1em;
+            _stopGameHandler() {
+                this._vacant()
             }
 
-            .table[data-status='vacant'] .status {
-                color: #a2ff00;
+            _log(message) {
+                log(`Стол №${this._number} - ${message}`)
             }
 
-            .table[data-status='busy'] .status {
-                color: #ff1515;
+            get number() {
+                return this._number
             }
 
-            .table[data-status='vacant'] .game_stop_button {
-                display: none;
+            get status() {
+                return this._status
             }
 
-            .table[data-status='vacant'] .game_add_time_button {
-                display: none;
+            get element() {
+                return this._element
             }
 
-            .table[data-status='busy'] .game_start_button {
-                display: none;
+            get games() {
+                return this._games
             }
 
-        </style>
-    </head>
+            get currentGame() {
+                return this._currentGame
+            }
 
-    <body>
-        <main>
-            <div id="app" class="app"></div>
-        </main>
+            set status(status) {
+                if (this.TABLE_STATUSES.has(status))
+                    this._status = status
+            }
 
-        <template id="table_template">
+        }
+    </script>
+    <script>
+        class Game {
+
+            NOT_STARTED = 'еще не начали'
+            IN_PROGRESS = 'играют'
+            FINISHED = 'закончили'
+
+            _status
+            _startTime
+            _endTime
+            _endTimeTimerId
+            _toPay = 0
+            _paid = 0
+
+            constructor(duration, toPay, paid) {
+                this.start(duration, toPay)
+                if (paid)
+                    this.pay(toPay)
+            }
+
+            start(duration, toPay) {
+                this._toPay = toPay
+                if (this._status !== undefined) return
+                this._status = this.IN_PROGRESS
+                this._startTime = new Date()
+                if (duration !== 0) {
+                    let endTimeTS = ts(this._startTime) + duration
+                    this._endTime = new Date(endTimeTS * 1000)
+                    this.setStopHandler()
+                }
+            }
+
+            addTime(duration) {
+                if (this._status !== this.IN_PROGRESS) return
+                if (this._endTime === undefined)
+                    this._endTime = new Date()
+                this._endTime.setSeconds(this._endTime.getSeconds() + duration)
+                this.setStopHandler()
+            }
+
+            stop() {
+                if (this._status != this.IN_PROGRESS) return
+                if (this._endTimeTimerId !== undefined)
+                    clearTimeout(this._endTimeTimerId);
+                this._status = this.FINISHED
+                this._endTime = new Date()
+            }
+
+            pay(amount) {
+                this._paid += amount
+            }
+
+            setStopHandler() {
+                if (this._endTimeTimerId !== undefined)
+                    clearTimeout(this._endTimeTimerId);
+                this._endTimeTimerId = setTimeout(this.stop, this._endTime - this._startTime)
+            }
+
+            get status() {
+                return this._status
+            }
+
+            get balance() {
+                return this._toPay - this._paid
+            }
+
+            get paid() {
+                return this._paid
+            }
+
+            get startTime() {
+                return this._startTime
+            }
+
+            get endTime() {
+                return this._endTime
+            }
+
+        }
+    </script>
+</head>
+
+<body>
+    <main>
+        <div id="app" class="app"></div>
+    </main>
+
+    <template id="table_template">
             <div class="table">
-                <p class="table_title">
-                    <span class="title"></span>
-                    <br>
+                <div class="table_title">
+                    <h2 class="title"></h2>
                     <span class="status"></span>
-                </p>
+                </div>
                 <table class="games_table">
                     <thead>
                         <tr>
                             <th>Начало игры</th>
                             <th>Конец игры</th>
                             <th>Стоимость</th>
+                            <th>Оплачено</th>
+                            <th>Статус</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
                     <tfoot></tfoot>
                 </table>
-                <button class="game_start_button">Играть</button>
-                <button class="game_stop_button">Завершить</button>
+                <button class="start_game_button">Играть</button>
+                <button class="stop_game_button">Завершить</button>
                 <button class="game_add_time_button">Добавить время</button>
+                <button class="pay_button">Оплатить</button>
             </div>
         </template>
 
-        <template id=new_game_params_form_template>
-            <div class="new_game_param_form_wrap">
-                <div class="new_game_param_form">
-                    <div>
-                        <label for="hours">часов</label>
-                        <input id="hours" type="text" min="0" max="12" maxlength="2" size="2" value="0"
-                            autocomplete="off" placeholder="0">
-                        <label for="minutes">минут</label>
-                        <input id="minutes" type="text" min="0" max="60" maxlength="2" size="2" value="0"
-                            autocomplete="off" placeholder="0">
-                    </div>
-                    <div>
-                        <label for="amount">грн</label>
-                        <input id="amount" type="text" min="0" max="9999" maxlength="4" size="4" value="0"
-                            autocomplete="off" placeholder="0">
-                    </div>
-                    <button id="start_game">Начать</button>
+    <template id=add_game_popup_template>
+        <div class="add_game_popup_wrap">
+            <div class="add_game_popup">
+                <div>
+                    <label for="hours">часов</label>
+                    <input id="hours" type="text" min="0" max="12" maxlength="2" size="2" value="0" autocomplete="off" placeholder="0">
+                    <label for="minutes">минут</label>
+                    <input id="minutes" type="text" min="0" max="60" maxlength="2" size="2" value="0" autocomplete="off" placeholder="0">
                 </div>
+                <div>
+                    <label for="amount">грн</label>
+                    <input id="amount" type="text" min="0" max="9999" maxlength="4" size="4" value="0" autocomplete="off" placeholder="0">
+                </div>
+                <div>
+                    <label for="is_paid">оплачено</label>
+                    <input id="is_paid" type="checkbox">
+                </div>
+                <button id="start_game">OK</button>
             </div>
-        </template>
+        </div>
+    </template>
 
-        <script>
+    <template id="pay_popup_template">
+        <div class="pay_game_popup_wrap">
+            <div class="pay_game_popup">
+                <div>
+                    <label for="amount">грн</label>
+                    <input id="amount" type="text" min="0" max="9999" maxlength="4" size="4" value="0" autocomplete="off" placeholder="0">
+                </div>
+                <button id="pay_game">OK</button>
+            </div>
+        </div>
+    </template>
 
-            function getAmount(startTime, endTime) {
-                let startTimeTS = ts(startTime)
-                let endTimeTS = ts(endTime)
-                let timeToPlay = endTimeTS - startTimeTS
-                let baseTime = startTimeTS
-                let curPrice = BASEPRICE
-                let amount = 0
+    <script>
+        tables = []
+        appBlock = document.getElementById('app')
+        tableTemplate = document.getElementById('table_template')
+        addGamePopupTemplate = document.getElementById('add_game_popup_template')
+        payPopupTemplate = document.getElementById('pay_popup_template')
 
-                for (let pair of PRICES) {
-                    let raiseTimestamp = getTimeStampForHour(pair[0], startTime)
-                    if (baseTime < raiseTimestamp) {
-                        if (endTimeTS < raiseTimestamp) {
-                            amount += secondsToHours(timeToPlay) * curPrice
-                            let diff = endTimeTS - baseTime
-                            timeToPlay -= diff
-                            break
-                        } else {
-                            let diff = raiseTimestamp - baseTime
-                            amount += secondsToHours(diff) * curPrice
-                            timeToPlay -= diff
-                            baseTime = raiseTimestamp
-                            curPrice = pair[1]
-                        }
-                    } else {
-                        curPrice = pair[1]
-                    }
-                }
-                if (timeToPlay) {
-                    amount += secondsToHours(timeToPlay) * curPrice
-                }
 
-                return amount
+        function updateAmount(hoursField, minutesField, amountField) {
+            let hours = parseInt(hoursField.value)
+            let minutes = parseInt(minutesField.value)
+            if (isNaN(hours)) hours = 0
+            if (isNaN(minutes)) minutes = 0
+            let gameDuration = getTimeInSeconds(hours, minutes)
+            let startTime = this.currentGame === null ? new Date() : this.currentGame.endTime
+            let endTime = new Date((ts(startTime) + gameDuration) * 1000)
+            let amount = getAmount(startTime, endTime)
+            amountField.value = Math.round(amount)
+        }
+
+        function updateTime(hoursField, minutesField, amountField) {
+            let amount = parseInt(amountField.value)
+            if (isNaN(amount)) amount = 0
+            let startTime = this.currentGame === null ? new Date() : this.currentGame.endTime
+            let gameDuration = getGameDuration(startTime, amount)
+            hoursField.value = gameDuration.get('hours')
+            minutesField.value = gameDuration.get('minutes')
+        }
+
+        function addGamePopup() {
+            let addGamePopup = addGamePopupTemplate.content.cloneNode(true)
+            let hoursField = addGamePopup.querySelector('#hours')
+            let minutesField = addGamePopup.querySelector('#minutes')
+            let amountField = addGamePopup.querySelector('#amount')
+            let isPaidField = addGamePopup.querySelector('#is_paid')
+            let okButton = addGamePopup.querySelector('#start_game')
+            hoursField.addEventListener('input', updateAmount.bind(this, hoursField, minutesField, amountField))
+            minutesField.addEventListener('input', updateAmount.bind(this, hoursField, minutesField, amountField))
+            amountField.addEventListener('input', updateTime.bind(this, hoursField, minutesField, amountField))
+            okButton.addEventListener('click', function() {
+                addGame(this, hoursField, minutesField, amountField, isPaidField)
+                document.querySelector('.add_game_popup_wrap').remove()
+            }.bind(this))
+            appBlock.appendChild(addGamePopup)
+        }
+
+        function payPopup() {
+            let payPopup = payPopupTemplate.content.cloneNode(true)
+            let amountField = payPopup.querySelector('#amount')
+            let okButton = payPopup.querySelector('#pay_game')
+            okButton.addEventListener('click', function() {
+                payGame(this, amountField)
+                document.querySelector('.pay_game_popup_wrap').remove()
+            }.bind(this))
+            appBlock.appendChild(payPopup)
+        }
+
+        function payGame(table, amountField) {
+            let amount = parseInt(amountField.value)
+            console.log(amount)
+            table.payCurrentGame(amount)
+            updateTable(table)
+        }
+
+        function updateGames(table) {
+            let tableElement = document.getElementById(`table_${table.number}`)
+            let tableGamesTable = tableElement.querySelector('.games_table')
+            let tableGamesTableBody = tableGamesTable.querySelector('tbody')
+
+            let gamesTable = document.createDocumentFragment()
+            for (let game of table.games) {
+                let gameRow = document.createElement('tr')
+                let gameStartTimeCell = document.createElement('td')
+                if (game.startTime !== undefined)
+                    gameStartTimeCell.innerText = formatTime(game.startTime)
+                gameRow.appendChild(gameStartTimeCell)
+                let gameEndTimeCell = document.createElement('td')
+                if (game.endTime !== undefined)
+                    gameEndTimeCell.innerText = formatTime(game.endTime)
+                gameRow.appendChild(gameEndTimeCell)
+                let gameAmountCell = document.createElement('td')
+                gameAmountCell.innerText = getAmount(game.startTime, game.endTime).toFixed(2)
+                gameRow.appendChild(gameAmountCell)
+                let paidCell = document.createElement('td')
+                paidCell.innerText = game.paid.toFixed(2)
+                gameRow.appendChild(paidCell)
+                let gameStatusCell = document.createElement('td')
+                gameStatusCell.innerText = game.status
+                gameRow.appendChild(gameStatusCell)
+                gamesTable.appendChild(gameRow)
             }
+            tableGamesTableBody.innerHTML = ''
+            tableGamesTableBody.appendChild(gamesTable)
+        }
 
-            function ts(date) {
-                return Math.round(date.getTime() / 1000)
+        function updateTableStatus(table) {
+            let tableElement = document.getElementById(`table_${table.number}`)
+            let tableStatusElement = tableElement.querySelector('.table .status')
+            tableElement.dataset.status = table.status
+            tableStatusElement.textContent = table.TABLE_STATUSES.get(table.status)
+            tableStatusElement.classList.add(table.status)
+        }
+
+        function updateTable(table) {
+            updateTableStatus(table)
+            updateGames(table)
+        }
+
+        function addGame(table, hoursField, minutesField, amountField, isPaidField) {
+            let hours = parseInt(hoursField.value)
+            let minutes = parseInt(minutesField.value)
+            let duration = getTimeInSeconds(hours, minutes)
+            let amount = parseInt(amountField.value)
+            let isPaid = isPaidField.checked
+            table.currentGame === null ?
+                table.startNewGame(duration, amount, isPaid) :
+                table.addTimeToCurrentGame(duration, amount, isPaid)
+            updateTable(table)
+        }
+
+        function showTables(tables) {
+            for (let table of tables) {
+                if (table.number > 1) appBlock.appendChild(document.createElement('hr'))
+                let tableElement = createTableElement(table)
+                appBlock.appendChild(tableElement)
             }
-
-            function getTimeStampForHour(hour, currentDate = new Date()) {
-                let date = new Date(
-                    currentDate.getFullYear(),
-                    currentDate.getMonth(),
-                    currentDate.getDate(),
-                    hour
-                )
-                return ts(date)
-            }
-
-            function secondsToHours(seconds) {
-                return seconds / 3600
-            }
-
-            function formatTime(dateTime) {
-                return [
-                    dateTime.getHours().toString().padStart(2, '0'),
-                    dateTime.getMinutes().toString().padStart(2, '0'),
-                    dateTime.getSeconds().toString().padStart(2, '0'),
-                ].join(':')
-            }
-
-            function getTimeInSeconds(hours = 0, minutes = 0) {
-                return (hours * 60 * 60) + (minutes * 60)
-            }
-
-            function log(message, statusName = 'info') {
-                const MESSAGE_STATUSES = new Map([
-                    ['info', new Map([
-                        ['status', 'INFO'],
-                        ['color', 'inherit'],
-                    ])],
-                    ['success', new Map([
-                        ['status', 'SUCCESS'],
-                        ['color', '#00ff00'],
-                    ])],
-                    ['error', new Map([
-                        ['status', 'ERROR'],
-                        ['color', '#ff0000'],
-                    ])],
-                ])
-                let status = MESSAGE_STATUSES.has(statusName) ? MESSAGE_STATUSES.get(statusName) : MESSAGE_STATUSES.get('info')
-                let style = `color: ${status.get('color')}`
-                console.log(`%c${formatTime(new Date())} ${status.get('status')}: ${message}`, style)
-            }
-
-            class Interface {
-
-                _appBlockId = 'app'
-
-                constructor() {
-                    this._appBlock = document.getElementById(this._appBlockId)
-                }
-
-                addTable(table) {
-                    let element = this._createTableElement(table)
-                    this._setTableHandlers(element, table)
-                    this._appBlock.appendChild(element)
-                }
-
-                updateTableStatus(table) {
-                    let tableElement = this._getTableElement(table)
-                    let tableStatusElement = tableElement.querySelector('.table .status')
-                    tableElement.dataset.status = table.status
-                    tableStatusElement.textContent = table.TABLE_STATUSES.get(table.status)
-                    tableStatusElement.classList.add(table.status)
-                }
-
-                updateGames(table) {
-                    let tableElement = this._getTableElement(table)
-                    let tableGamesTable = tableElement.querySelector('.games_table')
-                    let tableGamesTableBody = tableGamesTable.querySelector('tbody')
-
-                    let gamesTable = document.createDocumentFragment()
-                    for (let game of table.games) {
-                        console.log(game)
-                        let gameRow = document.createElement('tr')
-
-                        let startGameCell = document.createElement('td')
-                        if (game.startTime !== undefined) {
-                            startGameCell.innerText = formatTime(game.startTime)
-                        }
-                        gameRow.appendChild(startGameCell)
-
-                        let endGameCell = document.createElement('td')
-                        if (game.endTime !== undefined) {
-                            endGameCell.innerText = formatTime(game.endTime)
-                        }
-                        gameRow.appendChild(endGameCell)
-
-                        let amountGameCell = document.createElement('td')
-                        amountGameCell.innerText = getAmount(game.startTime, game.endTime).toFixed(2)
-                        gameRow.appendChild(amountGameCell)
-
-                        gamesTable.appendChild(gameRow)
-                    }
-                    tableGamesTableBody.innerHTML = ''
-                    tableGamesTableBody.appendChild(gamesTable)
-                }
-
-                _createTableElement(table) {
-                    let element = this._getTemplate('table')
-                    element.querySelector('.table').setAttribute('id', 'table_' + table.number)
-                    element.querySelector('.table').dataset.status = table.status
-                    element.querySelector('.table .title').textContent = 'Стол ' + table.number
-                    element.querySelector('.table .status').textContent = table.TABLE_STATUSES.get(table.status)
-
-                    return element
-                }
-
-                _setTableHandlers(element, table) {
-                    element.querySelector('.game_start_button').addEventListener('click', this._startNewGame.bind(this, table))
-                    element.querySelector('.game_stop_button').addEventListener('click', function () { table.stopGame() })
-                }
-
-                _startNewGame(table) {
-                    function updateAmount() {
-                        let hours = parseInt(hoursField.value)
-                        let minutes = parseInt(minutesField.value)
-                        let gameDuration = getTimeInSeconds(hours, minutes)
-                        let startTime = new Date()
-                        let endTime = new Date((ts(startTime) + gameDuration) * 1000)
-                        let amount = getAmount(startTime, endTime)
-                        amountField.value = amount.toFixed(2)
-                    }
-
-                    function startGame() {
-                        let hours = parseInt(hoursField.value)
-                        let minutes = parseInt(minutesField.value)
-                        let timeToPlay = getTimeInSeconds(hours, minutes)
-                        document.querySelector('.new_game_param_form_wrap').remove()
-                        table.startGame(timeToPlay)
-                    }
-
-                    let newGameParamsPopup = this._getTemplate('new_game_params_form')
-                    let hoursField = newGameParamsPopup.querySelector('#hours')
-                    let minutesField = newGameParamsPopup.querySelector('#minutes')
-                    let amountField = newGameParamsPopup.querySelector('#amount')
-                    let startGameButton = newGameParamsPopup.querySelector('#start_game')
-
-                    hoursField.addEventListener('input', updateAmount)
-                    minutesField.addEventListener('input', updateAmount)
-                    startGameButton.addEventListener('click', startGame)
-
-                    this._appBlock.appendChild(newGameParamsPopup)
-                }
-
-                _getTemplate(templateName) {
-                    let templateId = templateName + '_template'
-                    return document.getElementById(templateId).content.cloneNode(true)
-                }
-
-                _getTableElementId(table) {
-                    return `table_${table.number}`
-                }
-
-                _getTableElement(table) {
-                    let tableElementId = this._getTableElementId(table)
-                    return document.getElementById(tableElementId)
-                }
-
-            }
-
-            class App {
-
-                _tablesNumber
-                _tables = []
-                _interface
-
-                constructor(tablesNumber = 3) {
-                    log('Запуск приложения')
-
-                    this._tablesNumber = tablesNumber
-                    this._interface = new Interface()
-                    this.createUI()
-
-                    log('Приложение запущено', 'success')
-                    log(`Добавлено столов: ${this._tables.length}`)
-                }
-
-                createUI() {
-                    log('Добавление столов')
-                    for (let tableNumber = 1; tableNumber <= this._tablesNumber; tableNumber++) {
-                        this._tables.push(new Table(tableNumber, this._interface))
-                    }
-                }
-
-            }
-
-            class Table {
-
-                VACANT = 'vacant'
-                BUSY = 'busy'
-                TABLE_STATUSES = new Map([
-                    [this.VACANT, 'свободен'],
-                    [this.BUSY, 'занят'],
-                ])
-
-                _games = []
-                _status
-                _number
-                _interface
-
-                constructor(tableNumber, appInterface) {
-                    this._number = tableNumber
-                    this._interface = appInterface
-                    this._status = this.VACANT
-                    this.createElement()
-                }
-
-                createElement() {
-                    this._interface.addTable(this)
-                }
-
-                startGame(duration) {
-                    this._startGame(duration)
-                    this._busy()
-                    log(`Стол №${this._number} - запущена новая игра`)
-                }
-
-                stopGame() {
-                    this._stopGame()
-                    this._vacant()
-                    log(`Стол №${this._number} - игра остановлена`)
-                }
-
-                _startGame(duration) {
-                    this._currentGame = new Game(duration)
-                    this._games.push(this._currentGame)
-                    this._interface.updateGames(this)
-                }
-
-                _stopGame() {
-                    this._currentGame.stop()
-                    this._interface.updateGames(this)
-                }
-
-                _busy() {
-                    this._status = this.BUSY
-                    this._interface.updateTableStatus(this)
-                }
-
-                _vacant() {
-                    this._status = this.VACANT
-                    this._interface.updateTableStatus(this)
-                }
-
-                _stopGameHandler() {
-                    this._vacant()
-                }
-
-                get number() {
-                    return this._number
-                }
-
-                get status() {
-                    return this._status
-                }
-
-                get element() {
-                    return this._element
-                }
-
-                get games() {
-                    return this._games
-                }
-
-                set status(status) {
-                    if (this.TABLE_STATUSES.has(status))
-                        this._status = status
-                }
-
-            }
-
-            class Game {
-
-                NOT_STARTED = 'not started'
-                IN_PROGRESS = 'in progress'
-                FINISHED = 'finished'
-
-                _status
-                _startTime
-                _endTime
-
-                constructor(duration) {
-                    this.start(duration)
-                }
-
-                start(duration) {
-                    if (this._status !== undefined) {
-                        return
-                    }
-                    this._status = this.IN_PROGRESS
-                    this._startTime = new Date()
-                    if (duration !== undefined) {
-                        let endTimeTS = ts(this._startTime) + duration
-                        this._endTime = new Date(endTimeTS * 1000)
-                        setTimeout(this.stop, this._endTime - this._startTime)
-                    }
-                }
-
-                stop() {
-                    if (this._status != this.IN_PROGRESS) {
-                        return
-                    }
-                    this._status = this.FINISHED
-                    this._endTime = new Date()
-                }
-
-                get status() {
-                    return this._status
-                }
-
-                get startTime() {
-                    return this._startTime
-                }
-
-                get endTime() {
-                    return this._endTime
-                }
-
-            }
-
-        </script>
-        <script>
-
-            let app = new App(TABLE_NUMBER)
-
-        </script>
-    </body>
+        }
+
+        function createTableElement(table) {
+            let element = tableTemplate.content.cloneNode(true)
+            element.querySelector('.table').setAttribute('id', 'table_' + table.number)
+            element.querySelector('.table').dataset.status = table.status
+            element.querySelector('.table .title').textContent = 'Стол ' + table.number
+            element.querySelector('.table .status').textContent = table.TABLE_STATUSES.get(table.status)
+            element.querySelector('.start_game_button').addEventListener('click', addGamePopup.bind(table))
+            element.querySelector('.stop_game_button').addEventListener('click', function() {
+                table.stopCurrentGame()
+                updateTable(table)
+            })
+            element.querySelector('.game_add_time_button').addEventListener('click', addGamePopup.bind(table))
+            element.querySelector('.pay_button').addEventListener('click', payPopup.bind(table))
+            return element
+        }
+
+        // ************************************ START ********************************************
+
+        log('Добавление столов')
+
+        for (let tableNumber = 1; tableNumber <= TABLES_NUMBER; tableNumber++) {
+            tables.push(new Table(tableNumber))
+        }
+
+        log(`Добавлено столов: ${tables.length}`)
+
+        log('Создание интерфейса')
+
+        showTables(tables)
+    </script>
+
+</body>
 
 </html>
