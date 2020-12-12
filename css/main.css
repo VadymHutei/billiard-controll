@@ -32,7 +32,8 @@ p {
     background-color: #cccccc;
 }
 
-.new_game_param_form_wrap {
+.add_game_popup_wrap,
+.pay_game_popup_wrap {
     position: absolute;
     display: flex;
     justify-content: center;
@@ -42,7 +43,8 @@ p {
     background-color: rgba(0, 0, 0, 0.5);
 }
 
-.new_game_param_form {
+.add_game_popup,
+.pay_game_popup {
     padding: 1em;
     background-color: #ffffff;
     color: #000000;
@@ -78,6 +80,10 @@ p {
     color: #ff1515;
 }
 
+.table[data-status='busy'] .start_game_button {
+    display: none;
+}
+
 .table[data-status='vacant'] .stop_game_button {
     display: none;
 }
@@ -86,6 +92,6 @@ p {
     display: none;
 }
 
-.table[data-status='busy'] .start_game_button {
+.table[data-status='vacant'] .pay_button {
     display: none;
 }

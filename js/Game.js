@@ -63,6 +63,10 @@ class Game {
         return this._toPay - this._paid
     }
 
+    get paid() {
+        return this._paid
+    }
+
     get startTime() {
         return this._startTime
     }

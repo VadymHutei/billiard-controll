@@ -1,36 +1,60 @@
 function getAmount(startTime, endTime) {
     if (startTime === undefined || endTime === undefined) return 0
-    let startTimeTS = ts(startTime)
-    let endTimeTS = ts(endTime)
-    let timeToPlay = endTimeTS - startTimeTS
-    let baseTime = startTimeTS
-    let curPrice = BASEPRICE
+    if (startTime == endTime) return 0
+    if (startTime > endTime) return 0
     let amount = 0
-
-    for (let pair of PRICES) {
-        let raiseTimestamp = getTimeStampForHour(pair[0], startTime)
-        if (baseTime < raiseTimestamp) {
-            if (endTimeTS < raiseTimestamp) {
-                amount += secondsToHours(timeToPlay) * curPrice
-                let diff = endTimeTS - baseTime
-                timeToPlay -= diff
-                break
+    while (true) {
+        for (let rateIndex = 0; rateIndex < RATES.length; rateIndex++) {
+            let rate = RATES[rateIndex][1]
+            let nextRateIndex = (rateIndex + 1) % RATES.length
+            let nextRateStart = new Date(startTime)
+            if (RATES[nextRateIndex][0] === 0) nextRateStart.setDate(nextRateStart.getDate() + 1)
+            nextRateStart.setHours(RATES[nextRateIndex][0])
+            if (startTime > nextRateStart) continue
+            if (endTime > nextRateStart) {
+                let timeLeft = nextRateStart - startTime
+                amount += ms2h(timeLeft) * rate
+                startTime = nextRateStart
             } else {
-                let diff = raiseTimestamp - baseTime
-                amount += secondsToHours(diff) * curPrice
-                timeToPlay -= diff
-                baseTime = raiseTimestamp
-                curPrice = pair[1]
+                let timeLeft = endTime - startTime
+                amount += ms2h(timeLeft) * rate
+                return amount
             }
-        } else {
-            curPrice = pair[1]
         }
     }
-    if (timeToPlay) {
-        amount += secondsToHours(timeToPlay) * curPrice
-    }
+}
 
-    return amount
+function getGameDuration(startTime, amount) {
+    let duration = 0
+    while (true) {
+        for (let rateIndex = 0; rateIndex < RATES.length; rateIndex++) {
+            let rate = RATES[rateIndex][1]
+            let nextRateIndex = (rateIndex + 1) % RATES.length
+            let nextRateStart = new Date(startTime)
+            if (RATES[nextRateIndex][0] === 0) nextRateStart.setDate(nextRateStart.getDate() + 1)
+            nextRateStart.setHours(RATES[nextRateIndex][0])
+            if (startTime > nextRateStart) continue
+            let gameDuration = h2ms(amount / rate)
+            let rateDuration = nextRateStart - startTime
+            if (gameDuration > rateDuration) {
+                duration += rateDuration
+                amount -= ms2h(rateDuration) * rate
+                startTime = nextRateStart
+            } else {
+                duration += gameDuration
+                return ms2TimeMap(duration)
+            }
+        }
+    }
+}
+
+function ms2TimeMap(ms) {
+    return new Map([
+        ['hours', Math.trunc(ms / (60 * 60 * 1000))],
+        ['minutes', Math.trunc((ms / (60 * 1000)) % 60)],
+        ['seconds', Math.round((ms / 1000) % 60)],
+        ['totalMilliseconds', ms],
+    ])
 }
 
 function ts(date) {
@@ -49,6 +73,14 @@ function getTimeStampForHour(hour, currentDate = new Date()) {
 
 function secondsToHours(seconds) {
     return seconds / 3600
+}
+
+function ms2h(ms) {
+    return ms / (1000 * 60 * 60)
+}
+
+function h2ms(h) {
+    return Math.round(h * 60 * 60 * 1000)
 }
 
 function formatTime(dateTime) {

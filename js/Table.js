@@ -19,7 +19,7 @@ class Table {
 
     startNewGame(duration, toPay, paid) {
         if (this._currentGame !== null) return
-        this._startGame(duration, toPay, paid)
+        this._startNewGame(duration, toPay, paid)
         this._setStatus(this.BUSY)
     }
 
@@ -27,12 +27,16 @@ class Table {
         this._addTimeToCurrentGame(duration)
     }
 
+    payCurrentGame(amount) {
+        this._payCurrentGame(amount)
+    }
+
     stopCurrentGame() {
         this._stopCurrentGame()
         this._setStatus(this.VACANT)
     }
 
-    _startGame(duration, toPay, paid) {
+    _startNewGame(duration, toPay, paid) {
         this._currentGame = new Game(duration, toPay, paid)
         this._games.push(this._currentGame)
         this._log('запущена новая игра')
@@ -41,6 +45,10 @@ class Table {
     _addTimeToCurrentGame(duration) {
         this._currentGame.addTime(duration)
         this._log('Для текущей игры добавлено время')
+    }
+
+    _payCurrentGame(amount) {
+        this._currentGame.pay(amount)
     }
 
     _stopCurrentGame() {
